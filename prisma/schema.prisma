@@ -1,0 +1,498 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  PROFESSIONAL
+  CLIENT
+}
+
+enum ProfessionalStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+enum ServiceCategory {
+  INTERIOR_DESIGN
+  ARCHITECTURE
+  RENOVATION_CONTRACTOR
+  ELECTRICAL
+  PLUMBING
+  LANDSCAPING
+  SMART_HOME
+}
+
+enum ProjectType {
+  HOME_RENOVATION
+  INTERIOR_DESIGN
+  HOME_REPAIRS
+  NEW_CONSTRUCTION
+  SMART_HOME
+  LANDSCAPING
+}
+
+enum ProjectStage {
+  EXPLORING
+  ROUGH_PLAN
+  READY_TO_START
+  URGENT
+}
+
+enum BudgetRange {
+  UNDER_100K
+  ONE_HUNDRED_K_500K
+  FIVE_HUNDRED_K_2M
+  ABOVE_2M
+}
+
+enum ServiceLocation {
+  LAGOS_ISLAND
+  LAGOS_MAINLAND
+  LEKKI_AJAH
+  ABUJA
+}
+
+enum ConnectionRequestStatus {
+  PENDING
+  INTRODUCED
+  ACCEPTED
+  DECLINED
+  COMPLETED
+  CANCELLED
+}
+
+enum JobStatus {
+  INTRODUCED
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum NotificationType {
+  CONNECTION_REQUEST_ACCEPTED
+  CONNECTION_REQUEST_DECLINED
+  PROGRESS_UPDATE_POSTED
+  JOB_COMPLETED
+  REVIEW_REQUESTED
+  PROFESSIONAL_APPROVED
+  PROFESSIONAL_SUSPENDED
+  NEW_LEAD_RECEIVED
+}
+
+enum VerificationAction {
+  NIN_VERIFIED
+  BVN_VERIFIED
+  REFERENCE_CALLED
+  PORTFOLIO_VERIFIED
+  INTERVIEW_COMPLETED
+  STANDARDS_AGREED
+  APPROVED
+  REJECTED
+  SUSPENDED
+  NOTE_ADDED
+}
+
+enum ActorType {
+  CLIENT
+  PROFESSIONAL
+  ADMIN
+  SYSTEM
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum ClientCountry {
+  UK
+  US
+  CANADA
+  UAE
+  GERMANY
+  OTHER
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  role           UserRole
+  name           String
+  phone          String?
+  whatsappNumber String?   @map("whatsapp_number")
+  country        ClientCountry? // only set for CLIENT role
+  emailVerified  Boolean   @default(false) @map("email_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  professional   Professional?
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+  verificationLogs VerificationLog[] @relation("AdminLogs")
+
+  @@map("users")
+}
+
+model Professional {
+  id                   String             @id @default(cuid())
+  userId               String             @unique @map("user_id")
+  slug                 String             @unique // used in /pro/[slug] URLs
+  name                 String
+  specialty            String
+  location             ServiceLocation
+  bio                  String             @db.Text
+  whatsappNumber       String             @map("whatsapp_number")
+  yearsExperience      Int                @map("years_experience")
+  priceRangeMin        Int                @map("price_range_min") // in Naira
+  priceRangeMax        Int                @map("price_range_max") // in Naira
+  profilePhotoUrl      String?            @map("profile_photo_url")
+  isFoundingProfessional Boolean          @default(false) @map("is_founding_professional")
+  status               ProfessionalStatus @default(PENDING)
+  aggregateRating      Decimal            @default(0) @db.Decimal(3, 2) @map("aggregate_rating")
+  totalReviews         Int                @default(0) @map("total_reviews")
+
+  // Verification fields — only accessible to SUPER_ADMIN
+  ninVerified          Boolean   @default(false) @map("nin_verified")
+  ninVerifiedAt        DateTime? @map("nin_verified_at")
+  bvnVerified          Boolean   @default(false) @map("bvn_verified")
+  bankAccountName      String?   @map("bank_account_name")
+  bankAccountVerified  Boolean   @default(false) @map("bank_account_verified")
+  referencesCalled     Boolean   @default(false) @map("references_called")
+  portfolioVerified    Boolean   @default(false) @map("portfolio_verified")
+  interviewCompleted   Boolean   @default(false) @map("interview_completed")
+  standardsAgreed      Boolean   @default(false) @map("standards_agreed")
+  standardsAgreedAt    DateTime? @map("standards_agreed_at")
+  verificationNotes    String?   @db.Text @map("verification_notes") // admin-only
+
+  // Monetisation tracking
+  freeLeadsUsed        Int       @default(0) @map("free_leads_used")
+
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at") // soft delete
+
+  // Relations
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories           ProfessionalCategory[]
+  portfolio            PortfolioItem[]
+  matchResults         MatchResult[]
+  connectionRequests   ConnectionRequest[]
+  jobs                 Job[]
+  reviews              Review[]
+  verificationLogs     VerificationLog[]
+  introFees            IntroFee[]
+  fileAttachments      FileAttachment[]    @relation("ProfessionalFiles")
+
+  // Composite indexes for matching queries — critical for performance at scale
+  @@index([status, location])
+  @@index([deletedAt])
+  @@map("professionals")
+}
+
+// Many-to-many join table: a professional can serve multiple categories
+model ProfessionalCategory {
+  id             String          @id @default(cuid())
+  professionalId String          @map("professional_id")
+  category       ServiceCategory
+
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, category])
+  @@index([category])
+  @@map("professional_categories")
+}
+
+model PortfolioItem {
+  id                    String          @id @default(cuid())
+  professionalId        String          @map("professional_id")
+  imageUrl              String          @map("image_url")
+  thumbnailUrl          String?         @map("thumbnail_url")
+  projectTitle          String          @map("project_title")
+  projectLocation       String          @map("project_location")
+  projectCategory       ServiceCategory @map("project_category")
+  clientLocationCountry String          @map("client_location_country")
+  completedAt           DateTime        @map("completed_at")
+  description           String          @db.Text
+  createdAt             DateTime        @default(now()) @map("created_at")
+
+  professional          Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId])
+  @@map("portfolio_items")
+}
+
+// Captures client's structured project requirements — the core qualification engine
+model DiagnosticSession {
+  id             String       @id @default(cuid())
+  clientId       String?      @map("client_id") // nullable for anonymous sessions
+  projectType    ProjectType  @map("project_type")
+  projectStage   ProjectStage @map("project_stage")
+  budgetRange    BudgetRange  @map("budget_range")
+  location       ServiceLocation
+  completedAt    DateTime?    @map("completed_at")
+  ipAddress      String?      @map("ip_address")
+  userAgent      String?      @map("user_agent")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  matchResults      MatchResult[]
+  connectionRequest ConnectionRequest?
+  shareLinks        ShareLink[]
+
+  @@index([clientId])
+  @@map("diagnostic_sessions")
+}
+
+// Scored match results — computed by the matching service, stored for audit
+model MatchResult {
+  id             String   @id @default(cuid())
+  sessionId      String   @map("session_id")
+  professionalId String   @map("professional_id")
+  matchScore     Int      @map("match_score") // 0–100
+  rank           Int      // 1, 2, or 3
+  matchReasons   Json     @map("match_reasons") // string[] explaining the score
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  session        DiagnosticSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  professional   Professional      @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, professionalId])
+  @@index([sessionId, rank])
+  @@map("match_results")
+}
+
+model ConnectionRequest {
+  id               String                  @id @default(cuid())
+  sessionId        String                  @unique @map("session_id") // one connection per session
+  clientId         String?                 @map("client_id")
+  clientName       String                  @map("client_name")
+  clientWhatsapp   String                  @map("client_whatsapp")
+  clientCountry    ClientCountry           @map("client_country")
+  professionalId   String                  @map("professional_id")
+  status           ConnectionRequestStatus @default(PENDING)
+  introSentAt      DateTime?               @map("intro_sent_at")
+  acceptedAt       DateTime?               @map("accepted_at")
+  completedAt      DateTime?               @map("completed_at")
+  jobValueNaira    Int?                    @map("job_value_naira")
+  introFeePaid     Boolean                 @default(false) @map("intro_fee_paid")
+  introFeeAmount   Int?                    @map("intro_fee_amount")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  deletedAt        DateTime?               @map("deleted_at") // soft delete
+
+  session          DiagnosticSession @relation(fields: [sessionId], references: [id])
+  professional     Professional      @relation(fields: [professionalId], references: [id])
+  job              Job?
+  introFee         IntroFee?
+
+  @@index([professionalId, status])
+  @@index([clientId, status])
+  @@index([deletedAt])
+  @@map("connection_requests")
+}
+
+model Job {
+  id                           String    @id @default(cuid())
+  connectionRequestId          String    @unique @map("connection_request_id")
+  clientId                     String    @map("client_id")
+  professionalId               String    @map("professional_id")
+  title                        String
+  description                  String    @db.Text
+  location                     String
+  category                     ServiceCategory
+  budgetNaira                  Int?      @map("budget_naira")
+  status                       JobStatus @default(INTRODUCED)
+  startedAt                    DateTime? @map("started_at")
+  completedAt                  DateTime? @map("completed_at")
+  clientConfirmedComplete      Boolean   @default(false) @map("client_confirmed_complete")
+  professionalConfirmedComplete Boolean  @default(false) @map("professional_confirmed_complete")
+  createdAt                    DateTime  @default(now()) @map("created_at")
+  updatedAt                    DateTime  @updatedAt @map("updated_at")
+  deletedAt                    DateTime? @map("deleted_at") // soft delete
+
+  connectionRequest ConnectionRequest @relation(fields: [connectionRequestId], references: [id])
+  professional      Professional      @relation(fields: [professionalId], references: [id])
+  progressUpdates   ProgressUpdate[]
+  review            Review?
+  fileAttachments   FileAttachment[]  @relation("JobFiles")
+
+  @@index([clientId, status])
+  @@index([professionalId, status])
+  @@index([deletedAt])
+  @@map("jobs")
+}
+
+// Progress updates posted by professional — the remote management layer
+model ProgressUpdate {
+  id             String   @id @default(cuid())
+  jobId          String   @map("job_id")
+  professionalId String   @map("professional_id")
+  body           String   @db.Text
+  photoUrls      String[] @map("photo_urls") // stored after upload to Supabase/local
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  job            Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  professional   Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([jobId, createdAt])
+  @@map("progress_updates")
+}
+
+// Reviews are ONLY created by the system after both parties confirm job complete
+// Direct API creation is blocked at the service layer — never by the client
+model Review {
+  id             String   @id @default(cuid())
+  jobId          String   @unique @map("job_id")
+  clientId       String   @map("client_id")
+  professionalId String   @map("professional_id")
+  rating         Int      // 1–5, validated at service layer
+  body           String   @db.Text // max 500 chars enforced at service layer
+  isPublished    Boolean  @default(true) @map("is_published") // admin can unpublish abusive reviews
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  job            Job         @relation(fields: [jobId], references: [id])
+  professional   Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([professionalId, isPublished])
+  @@map("reviews")
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String           @map("user_id")
+  type       NotificationType
+  title      String
+  body       String
+  metadata   Json             @default("{}")
+  isRead     Boolean          @default(false) @map("is_read")
+  readAt     DateTime?        @map("read_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+// Audit trail for all admin verification actions
+model VerificationLog {
+  id             String             @id @default(cuid())
+  adminId        String             @map("admin_id")
+  professionalId String             @map("professional_id")
+  action         VerificationAction
+  notes          String?            @db.Text
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  admin          User         @relation("AdminLogs", fields: [adminId], references: [id])
+  professional   Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([professionalId, createdAt])
+  @@map("verification_logs")
+}
+
+// Full audit trail for every meaningful platform event
+model ActivityLog {
+  id         String    @id @default(cuid())
+  actorId    String?   @map("actor_id") // nullable for SYSTEM-initiated events
+  actorType  ActorType @map("actor_type")
+  action     String    // e.g. "diagnostic.completed", "job.progress_update_posted"
+  entityType String    @map("entity_type") // e.g. "DiagnosticSession", "Job"
+  entityId   String    @map("entity_id")
+  metadata   Json      @default("{}")
+  ipAddress  String?   @map("ip_address")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  actor      User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
+
+// Shareable link for diaspora client to send to Lagos contact
+model ShareLink {
+  id                String   @id @default(cuid())
+  sessionId         String   @map("session_id")
+  token             String   @unique // URL-safe random string
+  createdByClientId String?  @map("created_by_client_id")
+  expiresAt         DateTime @map("expires_at") // 7 days from creation
+  viewCount         Int      @default(0) @map("view_count")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  session           DiagnosticSession @relation(fields: [sessionId], references: [id])
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("share_links")
+}
+
+// Intro fee charged to professional per qualified lead
+model IntroFee {
+  id                  String        @id @default(cuid())
+  connectionRequestId String        @unique @map("connection_request_id")
+  professionalId      String        @map("professional_id")
+  amountNaira         Int           @map("amount_naira")
+  paymentReference    String?       @map("payment_reference") // Paystack ref
+  paymentStatus       PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt              DateTime?     @map("paid_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  connectionRequest   ConnectionRequest @relation(fields: [connectionRequestId], references: [id])
+  professional        Professional      @relation(fields: [professionalId], references: [id])
+
+  @@index([professionalId, paymentStatus])
+  @@map("intro_fees")
+}
+
+// File attachment metadata — actual files live in Supabase Storage or local disk
+model FileAttachment {
+  id             String    @id @default(cuid())
+  fileUrl        String    @map("file_url")
+  thumbnailUrl   String?   @map("thumbnail_url")
+  fileName       String    @map("file_name") // original name (stored for display)
+  storagePath    String    @map("storage_path") // UUID-based path (never the original name)
+  fileSize       Int       @map("file_size") // bytes
+  mimeType       String    @map("mime_type")
+  uploadedBy     String    @map("uploaded_by") // user id
+  entityType     String    @map("entity_type") // "PortfolioItem", "ProgressUpdate", etc.
+  entityId       String    @map("entity_id")
+  isDeleted      Boolean   @default(false) @map("is_deleted") // soft delete before storage removal
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  // Optional back-references for type-safe navigation
+  professional   Professional? @relation("ProfessionalFiles", fields: [professionalId], references: [id])
+  professionalId String?       @map("professional_id")
+  job            Job?          @relation("JobFiles", fields: [jobId], references: [id])
+  jobId          String?       @map("job_id")
+
+  @@index([entityType, entityId])
+  @@index([uploadedBy])
+  @@map("file_attachments")
+}
+
+// Stand-alone relation table for ProgressUpdate — Prisma doesn't support array relations
+// photo_urls are stored directly as String[] on ProgressUpdate for simplicity
