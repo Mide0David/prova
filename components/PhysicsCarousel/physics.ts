@@ -5,12 +5,13 @@ export class CarouselPhysics {
   lastPointerX: number = 0;
   lastPointerTime: number = 0;
 
-  readonly AUTO_DRIFT: number = -0.006;     // idle drift speed (left)
+  AUTO_DRIFT: number = -0.006;     // idle drift speed (left)
   readonly FRICTION: number = 0.92;         // momentum decay per frame (0–1, lower = faster stop)
   readonly DRAG_SENSITIVITY: number = 0.012; // pointer pixels → world units
   readonly MAX_VELOCITY: number = 0.25;
 
-  tick(deltaTime: number): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  tick(_deltaTime: number): void {
     if (!this.isDragging) {
       // Apply auto-drift when idle
       const target = this.AUTO_DRIFT;

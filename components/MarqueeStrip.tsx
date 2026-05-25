@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const signals = [
   "NIN Verified ✓", "Amaka Tunde · Lagos", "BVN Cross-Checked ✓", "Olu Badmus · Abuja",

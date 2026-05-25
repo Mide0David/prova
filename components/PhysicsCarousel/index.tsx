@@ -32,7 +32,6 @@ export default function PhysicsCarousel({ hideHeader = false, className = '' }: 
 
     let containerWidth = container.clientWidth;
 
-    // @ts-ignore - @types/three sometimes drops WebGLRenderer export in newer versions
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(containerWidth, CAROUSEL_HEIGHT);
@@ -60,7 +59,6 @@ export default function PhysicsCarousel({ hideHeader = false, className = '' }: 
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
-      // @ts-ignore
       physics.AUTO_DRIFT = 0;
     }
 

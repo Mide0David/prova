@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -205,6 +204,7 @@ model Professional {
   reviews              Review[]
   verificationLogs     VerificationLog[]
   introFees            IntroFee[]
+  progressUpdates      ProgressUpdate[]
   fileAttachments      FileAttachment[]    @relation("ProfessionalFiles")
 
   // Composite indexes for matching queries — critical for performance at scale

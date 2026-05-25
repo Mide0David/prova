@@ -15,6 +15,7 @@
     "@supabase/supabase-js": "^2.106.0",
     "date-fns": "^4.2.1",
     "framer-motion": "^12.38.0",
+    "lucide-react": "^1.16.0",
     "nanoid": "^5.1.11",
     "next": "14.2.35",
     "next-auth": "^4.24.14",

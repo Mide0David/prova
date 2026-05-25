@@ -84,7 +84,7 @@ const FaqSection = () => {
 
         <div className="mt-20">
           <h3 className="text-[18px] font-bold text-white mb-1">
-            Got a question? We'll get back to you.
+            Got a question? We&apos;ll get back to you.
           </h3>
           <a href="mailto:hello@prova.ng" className="text-[18px] text-white/40 hover:text-white transition-colors">
             hello@prova.ng
