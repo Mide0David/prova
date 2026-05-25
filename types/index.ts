@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Prova — Shared TypeScript Types
+// Groundwork — Shared TypeScript Types
 // These types mirror the Prisma schema but are decoupled from it, allowing
 // safe use on both client and server without importing Prisma types directly.
 // ─────────────────────────────────────────────────────────────────────────────

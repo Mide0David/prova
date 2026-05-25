@@ -15,7 +15,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Prova — Verified Professionals for Nigerians Abroad",
+  title: "Groundwork — Verified Professionals for Nigerians Abroad",
   description: "Find verified home-service professionals in Lagos and Abuja. NIN verified, reference-checked, and portfolio-confirmed.",
 };
 

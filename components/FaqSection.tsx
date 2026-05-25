@@ -10,7 +10,7 @@ const faqs = [
   },
   {
     q: "Is this free to use?",
-    a: "Yes — finding and contacting professionals through Prova is free for clients. We charge professionals a small listing fee."
+    a: "Yes — finding and contacting professionals through Groundwork is free for clients. We charge professionals a small listing fee."
   },
   {
     q: "What if a professional doesn't deliver?",
@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     q: "Can I send a proxy — someone in Lagos — to browse for me?",
-    a: "Yes. Share the Prova link with someone you trust in Lagos. They can browse, shortlist, and share pros with you over WhatsApp. You decide."
+    a: "Yes. Share the Groundwork link with someone you trust in Lagos. They can browse, shortlist, and share pros with you over WhatsApp. You decide."
   },
   {
     q: "What cities are covered?",
@@ -86,8 +86,8 @@ const FaqSection = () => {
           <h3 className="text-[18px] font-bold text-white mb-1">
             Got a question? We&apos;ll get back to you.
           </h3>
-          <a href="mailto:hello@prova.ng" className="text-[18px] text-white/40 hover:text-white transition-colors">
-            hello@prova.ng
+          <a href="mailto:hello@groundwork.ng" className="text-[18px] text-white/40 hover:text-white transition-colors">
+            hello@groundwork.ng
           </a>
         </div>
       </div>

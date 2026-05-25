@@ -31,7 +31,7 @@ export default function ShareCallout() {
             transition={{ duration: 0.14 }}
             className="bg-brand text-white rounded-[8px] px-4 py-2 text-[13px] font-medium"
           >
-            Share Prova with them
+            Share Groundwork with them
           </motion.button>
         </div>
       </div>

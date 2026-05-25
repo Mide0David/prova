@@ -28,7 +28,7 @@ const JoinPage = () => {
                     onClick={() => router.push('/')}
                     className="text-[12px] text-white/40 hover:text-white transition-colors"
                 >
-                    ← Back to Prova
+                    ← Back to Groundwork
                 </button>
                 <span className="text-[11px] text-white/20 uppercase tracking-widest">
                     Professional Application — Step {step} of 3

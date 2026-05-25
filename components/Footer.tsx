@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer className="bg-black-pure border-t border-white/06 px-6 md:px-20 py-5 flex flex-wrap items-center justify-between gap-3 text-[11px]">
       <div className="font-bold text-white tracking-[0.02em]">
-        Prova
+        Groundwork
       </div>
 
       <div className="flex flex-wrap gap-x-8 gap-y-2 text-white/30">

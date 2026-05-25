@@ -22,7 +22,7 @@ const steps = [
   },
   {
     title: "Portfolio Verification",
-    body: "Every photo is reverse image searched. We require a Prova-specific job-site photo proving the work is theirs.",
+    body: "Every photo is reverse image searched. We require a Groundwork-specific job-site photo proving the work is theirs.",
     chip: "Stolen Photos Rejected"
   },
   {
